@@ -13,6 +13,16 @@
 
 class Particles;
 
+// int Tunneling_Model : choice of the tunneling model 
+//                       0 - for the ADK (l* = n*-1) model with the magnetic quantum number m set to 0 for all electrons
+//                       1 - for the PPT model, in which A_nl is given by the Hartree formula and m can be non-zero for p-, d-, ... states
+//
+// int BSI             : the choice of the barrier suppression ionization model
+//                       0 for no barrier suppression (the tunneling formula is used)
+//                       1 - Tong-Lin exponential suppression formula
+//                       2 - Kostuykov-Artemenko-Golovanov model
+//                       All BSI models can be combined with different tunneling formulas switched by Tunneling_Model 
+
 template <int Tunneling_Model, int BSI>
 class IonizationTunnel : public Ionization
 {
@@ -37,13 +47,17 @@ class IonizationTunnel : public Ionization
     std::vector<double> lambda_tunnel;
 };
 
+
 template <int Tunneling_Model, int BSI>
 IonizationTunnel<Tunneling_Model, BSI>::IonizationTunnel(Params &params, Species *species) : Ionization(params, species)
 {
     DEBUG("Creating the Tunnel Ionizaton class");
     double abs_m         = 0;
     double g_factor      = 1;
-    double Anl_squared   = 4.;
+    double Anl           = 4.;  // the initial value is set to 4 on purpose, 
+                                // as A_nl = 4*C_nl^2, where C_nl are 
+                                // the Hartree coefficients; C_nl is set 
+                                // to 1 for a neutral atom
     double Blm           = 1.;
     double ionization_tl_parameter_;
 
@@ -86,16 +100,16 @@ IonizationTunnel<Tunneling_Model, BSI>::IonizationTunnel(Params &params, Species
         double cst = ((double)Z + 1.0) * sqrt(2.0 / Potential[Z]);
         if(Tunneling_Model == 1) {
             if( Z>0 ) {
-                Anl_squared = pow( 2, cst+1.0 ) / \
+                Anl = pow( 2, cst+1.0 ) / \
                                 ( cst*tgamma( cst/2.0+Azimuthal_quantum_number[Z]+1 )*tgamma( cst/2.0-Azimuthal_quantum_number[Z]) );
             }
         } else {
-            Anl_squared = pow( 2, cst+1.0 ) / \
+            Anl = pow( 2, cst+1.0 ) / \
                 ( cst*tgamma( cst ) );
         }
 
         alpha_tunnel[Z] = cst - 1.0 - abs_m;
-        beta_tunnel[Z] = g_factor*Anl_squared*Blm * Potential[Z] * au_to_w0;
+        beta_tunnel[Z] = g_factor*Anl*Blm * Potential[Z] * au_to_w0;
         // beta_tunnel[Z] = pow(2, alpha_tunnel[Z]) * (8. * Azimuthal_quantum_number[Z] + 4.0) / (cst * tgamma(cst)) *
         //                  Potential[Z] * au_to_w0 * tgamma(Azimuthal_quantum_number[Z] + abs_m + 1) /
         //                  (tgamma(abs_m + 1) * tgamma(Azimuthal_quantum_number[Z] - abs_m + 1));
@@ -244,13 +258,13 @@ inline void IonizationTunnel<Tunneling_Model, BSI>::operator()(Particles *partic
 template <int Tunneling_Model, int BSI>
 inline double IonizationTunnel<Tunneling_Model, BSI>::ionizationRate(const int Z, const double E)
 {
-    if (BSI == 0) {
+    if (BSI == 0) { // no barrier suppression, use tunneling formula
         double delta = gamma_tunnel[Z] / E;
         return beta_tunnel[Z] * exp(-delta * one_third + alpha_tunnel[Z] * log(delta));
-    } else if (BSI == 1) {
+    } else if (BSI == 1) { // Tong-Ling barrier suppression model
         const double delta = gamma_tunnel[Z] / E;
         return beta_tunnel[Z] * exp(-delta * one_third + alpha_tunnel[Z] * log(delta) - E * lambda_tunnel[Z]);
-    } else if (BSI == 2) {
+    } else if (BSI == 2) { // KAG barrier suppression model
         constexpr double IH = 13.598434005136;
         double ratio_of_IPs = IH / IonizationTables::ionization_energy(atomic_number_, Z);
 
