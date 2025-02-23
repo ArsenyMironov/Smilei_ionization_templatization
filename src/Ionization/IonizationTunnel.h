@@ -20,7 +20,7 @@ class Particles;
 // int BSI             : the choice of the barrier suppression ionization model
 //                       0 for no barrier suppression (the tunneling formula is used)
 //                       1 - Tong-Lin exponential suppression formula
-//                       2 - Kostuykov-Artemenko-Golovanov model
+//                       2 - Kostyukov-Artemenko-Golovanov model
 //                       All BSI models can be combined with different tunneling formulas switched by Tunneling_Model 
 
 template <int Tunneling_Model, int BSI>
