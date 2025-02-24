@@ -40,9 +40,6 @@ class IonizationTunnel : public Ionization
     std::vector<double> Potential, Azimuthal_quantum_number;
     std::vector<double> alpha_tunnel, beta_tunnel, gamma_tunnel;
 
-    std::vector<double> Magnetic_quantum_number;
-    std::vector<double> Principal_quantum_number;
-
     // Tong&Lin
     std::vector<double> lambda_tunnel;
 };
