@@ -98,14 +98,14 @@ IonizationTunnel<Tunneling_Model, BSI>::IonizationTunnel(Params &params, Species
                    ( pow( 2, abs_m )*tgamma(abs_m+1)*tgamma(Azimuthal_quantum_number[Z]-abs_m+1) );
 
         double cst = ((double)Z + 1.0) * sqrt(2.0 / Potential[Z]);
-        if(Tunneling_Model == 1) {
+        if(Tunneling_Model == 0) {
+            Anl = pow( 2, cst+1.0 ) / \
+                ( cst*tgamma( cst ) );
+        } else {
             if( Z>0 ) {
                 Anl = pow( 2, cst+1.0 ) / \
                                 ( cst*tgamma( cst/2.0+Azimuthal_quantum_number[Z]+1 )*tgamma( cst/2.0-Azimuthal_quantum_number[Z]) );
             }
-        } else {
-            Anl = pow( 2, cst+1.0 ) / \
-                ( cst*tgamma( cst ) );
         }
 
         alpha_tunnel[Z] = cst - 1.0 - abs_m;
