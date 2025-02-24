@@ -743,6 +743,22 @@ public:
             this_species->ionization_tl_parameter_ = 6;
             PyTools::extract( "ionization_tl_parameter", this_species->ionization_tl_parameter_, "Species", ispec);
 
+            std::vector<double> ion_pots(this_species->atomic_number_);
+            PyTools::extractV( "ionization_potentials", ion_pots, "Species", ispec);
+            this_species->ionization_potentials_ = ion_pots;
+
+            std::vector<double> l_nums(this_species->atomic_number_);
+            PyTools::extractV( "azimuthal_quantum_numbers", l_nums, "Species", ispec);
+            this_species->azimuthal_quantum_numbers_ = l_nums;
+
+            std::vector<double> m_nums(this_species->atomic_number_);
+            PyTools::extractV( "magnetic_quantum_numbers", m_nums, "Species", ispec);
+            this_species->magnetic_quantum_numbers_ = m_nums;
+
+            std::vector<double> g_nums(this_species->atomic_number_);
+            PyTools::extractV( "g_factors", g_nums, "Species", ispec);
+            this_species->g_factors_ = g_nums;   
+
             std::string model;
             PyTools::extract( "ionization_model", model, "Species", ispec );
             if( model!="none" ) {
@@ -764,7 +780,8 @@ public:
                 }
 
                 if( (model == "tunnel") || (model == "tunnel_BSI") || (model == "tunnel_TL") || (model == "tunnel_full_PPT") || \
-                    (model == "tunnel_full_PPT_TL") || (model == "tunnel_full_PPT_BSI") ){
+                    (model == "tunnel_full_PPT_TL") || (model == "tunnel_full_PPT_BSI") || \
+                    (model == "tunnel_custom_tables") || (model == "tunnel_custom_tables_TL") || (model == "tunnel_custom_tables_BSI") ){
                     if (params.Laser_Envelope_model){
                         ERROR_NAMELIST("An envelope is present, so tunnel_envelope or tunnel_envelope_averaged ionization model should be selected for species "<<species_name,
                         LINK_NAMELIST + std::string("#species"));
@@ -1034,6 +1051,10 @@ public:
         new_species->atomic_number_                            = species->atomic_number_;
         new_species->maximum_charge_state_                     = species->maximum_charge_state_;
         new_species->ionization_tl_parameter_                  = species->ionization_tl_parameter_;
+        new_species->ionization_potentials_                    = species->ionization_potentials_;
+        new_species->azimuthal_quantum_numbers_                = species->azimuthal_quantum_numbers_;
+        new_species->magnetic_quantum_numbers_                 = species->magnetic_quantum_numbers_;
+        new_species->g_factors_                                = species->g_factors_;
         new_species->ionization_rate_                          = species->ionization_rate_;
         if( new_species->ionization_rate_!=Py_None ) {
             Py_INCREF( new_species->ionization_rate_ );

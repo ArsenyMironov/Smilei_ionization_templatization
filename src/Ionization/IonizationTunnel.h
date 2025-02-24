@@ -16,6 +16,7 @@ class Particles;
 // int Tunneling_Model : choice of the tunneling model 
 //                       0 - for the ADK (l* = n*-1) model with the magnetic quantum number m set to 0 for all electrons
 //                       1 - for the PPT model, in which A_nl is given by the Hartree formula and m can be non-zero for p-, d-, ... states
+//                       2 - PPT model with ionization pot-s, l, m, and g quiantum numbers taken from custom tables passed in Species
 //
 // int BSI             : the choice of the barrier suppression ionization model
 //                       0 for no barrier suppression (the tunneling formula is used)
@@ -40,9 +41,6 @@ class IonizationTunnel : public Ionization
     std::vector<double> Potential, Azimuthal_quantum_number;
     std::vector<double> alpha_tunnel, beta_tunnel, gamma_tunnel;
 
-    std::vector<double> Magnetic_quantum_number;
-    std::vector<double> Principal_quantum_number;
-
     // Tong&Lin
     std::vector<double> lambda_tunnel;
 };
@@ -54,17 +52,26 @@ IonizationTunnel<Tunneling_Model, BSI>::IonizationTunnel(Params &params, Species
     DEBUG("Creating the Tunnel Ionizaton class");
     double abs_m         = 0;
     double g_factor      = 1;
-    double Anl           = 4.;  // the initial value is set to 4 on purpose, 
-                                // as A_nl = 4*C_nl^2, where C_nl are 
-                                // the Hartree coefficients; C_nl is set 
-                                // to 1 for a neutral atom
-    double Blm           = 1.;
+    double Anl           = 4;  // the initial value is set to 4 on purpose, 
+                               // as A_nl = 4*C_nl^2, where C_nl are 
+                               // the Hartree coefficients; C_nl is set 
+                               // to 1 for a neutral atom
+    double Blm           = 1;
     double ionization_tl_parameter_;
+    std::vector<double> Magnetic_quantum_number;
+    std::vector<double> g_factors;
 
     // Ionization potential & quantum numbers (all in atomic units 1 au = 27.2116 eV)
     atomic_number_ = species->atomic_number_;
-    Potential.resize(atomic_number_);
-    Azimuthal_quantum_number.resize(atomic_number_);
+    if (Tunneling_Model == 2) {
+        Potential                   = species->ionization_potentials_;
+        Azimuthal_quantum_number    = species->azimuthal_quantum_numbers_;
+        Magnetic_quantum_number     = species->magnetic_quantum_numbers_;
+        g_factors                   = species->g_factors_;
+    } else {
+        Potential.resize(atomic_number_);
+        Azimuthal_quantum_number.resize(atomic_number_);
+    }
 
     alpha_tunnel.resize(atomic_number_);
     beta_tunnel.resize(atomic_number_);
@@ -88,8 +95,14 @@ IonizationTunnel<Tunneling_Model, BSI>::IonizationTunnel(Params &params, Species
             g_factor = IonizationTables::magnetic_degeneracy_atomic_number(atomic_number_, Z);
         } 
 
-        Potential[Z] = IonizationTables::ionization_energy(atomic_number_, Z) * eV_to_au;
-        Azimuthal_quantum_number[Z] = IonizationTables::azimuthal_atomic_number(atomic_number_, Z);
+        if (Tunneling_Model == 2) {
+            abs_m    = abs(Magnetic_quantum_number[Z]);
+            g_factor = g_factors[Z];
+            Potential[Z] = Potential[Z] * eV_to_au;
+        } else {
+            Potential[Z] = IonizationTables::ionization_energy(atomic_number_, Z) * eV_to_au;
+            Azimuthal_quantum_number[Z] = IonizationTables::azimuthal_atomic_number(atomic_number_, Z);
+        }
 
         DEBUG("Potential: " << Potential[Z] << " Az.q.num: " << Azimuthal_quantum_number[Z]);
 
@@ -98,21 +111,22 @@ IonizationTunnel<Tunneling_Model, BSI>::IonizationTunnel(Params &params, Species
                    ( pow( 2, abs_m )*tgamma(abs_m+1)*tgamma(Azimuthal_quantum_number[Z]-abs_m+1) );
 
         double cst = ((double)Z + 1.0) * sqrt(2.0 / Potential[Z]);
-        if(Tunneling_Model == 1) {
+        if (Tunneling_Model == 0)  {
+            Anl = pow( 2, cst+1.0 ) / \
+                ( cst*tgamma( cst ) );
+            
+        } else {
             if( Z>0 ) {
                 Anl = pow( 2, cst+1.0 ) / \
                                 ( cst*tgamma( cst/2.0+Azimuthal_quantum_number[Z]+1 )*tgamma( cst/2.0-Azimuthal_quantum_number[Z]) );
             }
-        } else {
-            Anl = pow( 2, cst+1.0 ) / \
-                ( cst*tgamma( cst ) );
         }
+
+        // MESSAGE(0, "Z=" << Z << ", Ip=" << Potential[Z] << ", l=" << Azimuthal_quantum_number[Z] << ", |m|=" << abs_m << ", g=" << g_factor << ", Anl=" << Anl << ", Blm=" << Blm);
+
 
         alpha_tunnel[Z] = cst - 1.0 - abs_m;
         beta_tunnel[Z] = g_factor*Anl*Blm * Potential[Z] * au_to_w0;
-        // beta_tunnel[Z] = pow(2, alpha_tunnel[Z]) * (8. * Azimuthal_quantum_number[Z] + 4.0) / (cst * tgamma(cst)) *
-        //                  Potential[Z] * au_to_w0 * tgamma(Azimuthal_quantum_number[Z] + abs_m + 1) /
-        //                  (tgamma(abs_m + 1) * tgamma(Azimuthal_quantum_number[Z] - abs_m + 1));
         gamma_tunnel[Z] = 2.0 * sqrt(2.0 * Potential[Z] * 2.0 * Potential[Z] * 2.0 * Potential[Z]);
         if (BSI == 1) {
             lambda_tunnel[Z] = ionization_tl_parameter_ * cst * cst / gamma_tunnel[Z];

@@ -431,6 +431,10 @@ class Species(SmileiComponent):
     atomic_number = None
     maximum_charge_state = 0
     ionization_tl_parameter = 6
+    ionization_potentials = []
+    azimuthal_quantum_numbers = []
+    magnetic_quantum_numbers = []
+    g_factors = []
     is_test = False
     relativistic_field_initialization = False
     keep_interpolated_fields = []

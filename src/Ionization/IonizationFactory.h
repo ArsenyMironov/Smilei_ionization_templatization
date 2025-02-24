@@ -62,7 +62,19 @@ class IonizationFactory
         } else if (model == "tunnel_full_PPT_BSI") {  
             checkMaxCharge(species);
             checkNotLaserEnvelopeModel(params);
-            Ionize = new IonizationTunnel<1,2>(params, species); // FullPPT+BSI
+            Ionize = new IonizationTunnel<1,2>(params, species); // FullPPT+BSI (KAG)
+        } else if (model == "tunnel_custom_tables") {  
+            checkMaxCharge(species);
+            checkNotLaserEnvelopeModel(params);
+            Ionize = new IonizationTunnel<2,0>(params, species); // Tunneling formula with custom Ip, l, m, g
+        } else if (model == "tunnel_custom_tables_TL") {  
+            checkMaxCharge(species);
+            checkNotLaserEnvelopeModel(params);
+            Ionize = new IonizationTunnel<2,1>(params, species); // Tunneling formula with custom Ip, l, m, g + TL
+        } else if (model == "tunnel_custom_tables_BSI") {  
+            checkMaxCharge(species);
+            checkNotLaserEnvelopeModel(params);
+            Ionize = new IonizationTunnel<2,2>(params, species); // Tunneling formula with custom Ip, l, m, g + BSI (KAG)
         }
 
         return Ionize;

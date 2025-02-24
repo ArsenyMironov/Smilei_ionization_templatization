@@ -82,6 +82,13 @@ public:
     //! alpha parameter in the Tong-Lin ionization model
     double ionization_tl_parameter_;
 
+    //! array of custom ionization potentials, l-, and m-numbers
+    //! used in ionization model "tunnel_custom_tables"
+    std::vector<double> ionization_potentials_;
+    std::vector<double> azimuthal_quantum_numbers_;
+    std::vector<double> magnetic_quantum_numbers_;
+    std::vector<double> g_factors_;
+
     //! user defined ionization rate profile
     PyObject *ionization_rate_;
 
